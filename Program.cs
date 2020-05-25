@@ -10,13 +10,63 @@ namespace BeatTimer
         static void Main(string[] args)
         {
             double[] data;
-            WAV.readWav(args[0], out data);
-            var spec = spectrogram(data, 2048, 128);
-            Console.WriteLine(spec.Length);
-            for (int i = 0; i < 10; i++)
+            double samplerate;
+            int step = 128;
+            int size = 2048;
+
+            WAV.readWav(args[0], out data, out samplerate);
+            var spec = spectrogram(data, size, step);
+            var bpm = getbpm(spec, samplerate, step);
+
+            Console.WriteLine("Bpm is " + bpm);
+        }
+
+        static double bpmtodel(double bpm, double samplerate, int step)
+        {
+            return samplerate * 60 / (step * bpm);
+        }
+
+        static double comb(double[] arr, int x)
+        {
+            double sum = 0;
+            for (int i = 0; i + x < arr.Length; i++)
             {
-                Console.WriteLine(spec[i]);
+                sum += Math.Abs(arr[i] - arr[i + x]);
             }
+            return sum;
+        }
+
+        /// <summary>
+        ///   Estimate the bpm to nearest integer of audio spectral flux data
+        /// </summary>
+        /// <param name="spec">Flux array: get using spectrogram method</param>
+        /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
+        /// <param name="step">FFT increment</param>
+        /// <returns>Estimated bpm</returns>
+        static double getbpm(double[] spec, double samplerate, int step)
+        {
+            int lower = (int)Math.Floor(bpmtodel(140, samplerate, step)) - 1;
+            int upper = (int)Math.Ceiling(bpmtodel(70, samplerate, step)) + 1;
+
+            int minindex = 0;
+            double freqmin = double.MaxValue;
+
+            double[] bins = new double[upper - lower + 1];
+            for (int i = lower; i <= upper; i++)
+            {
+                bins[i - lower] = comb(spec, i);
+            }
+
+            for (int i = 1; i < upper - lower; i++)
+            {
+                if (bins[i] < bins[i - 1] && bins[i] < bins[i + 1] && bins[i] < freqmin)
+                {
+                    minindex = i;
+                    freqmin = bins[i];
+                }
+            }
+
+            return Math.Round(bpmtodel(lower + minindex, samplerate, step));
         }
 
         /// <summary>
@@ -85,7 +135,12 @@ namespace BeatTimer
             return s / 32768.0;
         }
 
-        public static void readWav(string filename, out double[] audio)
+        static double bytesToDouble(byte b1, byte b2, byte b3, byte b4)
+        {
+            return (double)((b4 << 24) | (b3 << 16) | (b2 << 8) | b1);
+        }
+
+        public static void readWav(string filename, out double[] audio, out double samplerate)
         {
             byte[] wav = File.ReadAllBytes(filename);
             int channels = wav[22];
@@ -115,6 +170,8 @@ namespace BeatTimer
                 }
                 i++;
             }
+
+            samplerate = bytesToDouble(wav[24], wav[25], wav[26], wav[27]);
         }
     }
 }
