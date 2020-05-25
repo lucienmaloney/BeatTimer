@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "BeatTimer": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Users\\lucie\\Desktop\\wav\\Good at Being Bad.wav\""
+    }
+  }
+}

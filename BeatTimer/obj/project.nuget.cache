@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "NKsk8H/Rc2sHeTPBhL4WIBB+BKqbzqw5XpwCcbkFI/bctv/4Suf2Se/Qk7JzNDqpmkuP8yYzx7TIiwFW05QdoA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\lucie\\source\\repos\\BeatTimer\\BeatTimer\\BeatTimer.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\lucie\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\3.1.2\\microsoft.aspnetcore.app.ref.3.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}
