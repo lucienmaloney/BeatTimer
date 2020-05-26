@@ -7,7 +7,7 @@ namespace BeatTimer
 {
     class BeatTimer
     {
-        static void Main(string[] args)
+        static void main(string[] args)
         {
             double[] data;
             double samplerate;
@@ -29,11 +29,13 @@ namespace BeatTimer
         static double comb(double[] arr, int x)
         {
             double sum = 0;
+            int count = 0;
             for (int i = 0; i + x < arr.Length; i++)
             {
                 sum += Math.Abs(arr[i] - arr[i + x]);
+                count++;
             }
-            return sum;
+            return sum / count;
         }
 
         /// <summary>
@@ -43,10 +45,10 @@ namespace BeatTimer
         /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
         /// <param name="step">FFT increment</param>
         /// <returns>Estimated bpm</returns>
-        static double getbpm(double[] spec, double samplerate, int step)
+        public static double getbpm(double[] spec, double samplerate, int step)
         {
-            int lower = (int)Math.Floor(bpmtodel(140, samplerate, step)) - 1;
-            int upper = (int)Math.Ceiling(bpmtodel(70, samplerate, step)) + 1;
+            int lower = (int)Math.Floor(bpmtodel(50, samplerate, step)) - 1;
+            int upper = (int)Math.Ceiling(bpmtodel(15, samplerate, step)) + 1;
 
             int minindex = 0;
             double freqmin = double.MaxValue;
@@ -66,8 +68,10 @@ namespace BeatTimer
                 }
             }
 
-            return Math.Round(bpmtodel(lower + minindex, samplerate, step));
+            double selectedbpm = bpmtodel(lower + minindex, samplerate, step);
+            return Math.Round(selectedbpm * 8) / 2;
         }
+
 
         /// <summary>
         ///   Calculates the spectral flux of a real double array
@@ -81,7 +85,7 @@ namespace BeatTimer
         /// <param name="size">FFT length (power of 2)</param>
         /// <param name="step">How much to increment for start of following FFT</param>
         /// <returns>Array reprenting change in sum of frequencies over time</returns>
-        static double[] spectrogram(double[] arr, int size, int step)
+        public static double[] spectrogram(double[] arr, int size, int step)
         {
             int n = arr.Length;
             // FFT of real values is symmetric, so we only need an array half the length + 1
@@ -127,7 +131,7 @@ namespace BeatTimer
     }
 
     // https://stackoverflow.com/questions/8754111/how-to-read-the-data-in-a-wav-file-to-an-array
-    class WAV
+    public class WAV
     {
         static double bytesToDouble(byte firstByte, byte secondByte)
         {
@@ -159,7 +163,7 @@ namespace BeatTimer
             audio = new double[samples];
 
             int i = 0;
-            while (pos < wav.Length)
+            while (pos + 4 < wav.Length)
             {
                 audio[i] = bytesToDouble(wav[pos], wav[pos + 1]);
                 pos += 2;
