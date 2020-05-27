@@ -7,7 +7,7 @@ namespace BeatTimer
 {
     class BeatTimer
     {
-        static void main(string[] args)
+        static void Main(string[] args)
         {
             double[] data;
             double samplerate;
