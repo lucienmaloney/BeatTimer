@@ -7,18 +7,25 @@ namespace BeatTimer
 {
     class BeatTimer
     {
-        static void main(string[] args)
+        static void Main(string[] args)
         {
             double[] data;
             double samplerate;
             int step = 128;
             int size = 2048;
 
-            WAV.readWav(args[0], out data, out samplerate);
+            WAV.readWav(args[1], out data, out samplerate);
             var spec = spectrogram(data, size, step);
             var bpm = getbpm(spec, samplerate, step);
 
             Console.WriteLine("Bpm is " + bpm);
+
+            for (int i = 0; i < 8; i++)
+            {
+                var len = spec.Length;
+                var b = getbpm(spec[(i * len / 8)..((i + 1) * len / 8)], samplerate, step);
+                Console.WriteLine("Bpm{0} is " + b, i);
+            }
         }
 
         static double bpmtodel(double bpm, double samplerate, int step)
@@ -47,7 +54,7 @@ namespace BeatTimer
         /// <returns>Estimated bpm</returns>
         public static double getbpm(double[] spec, double samplerate, int step)
         {
-            int lower = (int)Math.Floor(bpmtodel(50, samplerate, step)) - 1;
+            int lower = (int)Math.Floor(bpmtodel(75, samplerate, step)) - 1;
             int upper = (int)Math.Ceiling(bpmtodel(15, samplerate, step)) + 1;
 
             int minindex = 0;
@@ -69,7 +76,8 @@ namespace BeatTimer
             }
 
             double selectedbpm = bpmtodel(lower + minindex, samplerate, step);
-            return Math.Round(selectedbpm * 8) / 2;
+            double bpm = selectedbpm * 8;
+            return bpm > 400 ? Math.Round(bpm / 2) / 2 : Math.Round(bpm) / 2;
         }
 
 
