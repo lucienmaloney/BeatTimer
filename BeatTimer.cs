@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using FFTWSharp;
 
@@ -14,18 +16,84 @@ namespace BeatTimer
             int step = 128;
             int size = 2048;
 
-            WAV.readWav(args[1], out data, out samplerate);
+            WAV.readWav(args[0], out data, out samplerate);
             var spec = spectrogram(data, size, step);
             var bpm = getbpm(spec, samplerate, step);
+            var rolling = rollingavg(spec, 5);
+            var del = bpmtodel(bpm, samplerate, step);
+            var indexes = beatindexes(rolling, del / 8);
 
             Console.WriteLine("Bpm is " + bpm);
-
-            for (int i = 0; i < 8; i++)
+            for (int i = 1; i < indexes.Length; i += 8)
             {
-                var len = spec.Length;
-                var b = getbpm(spec[(i * len / 8)..((i + 1) * len / 8)], samplerate, step);
-                Console.WriteLine("Bpm{0} is " + b, i);
+                Console.WriteLine("Beat at " + indextotime(indexes[i], samplerate, step));
             }
+        }
+
+        static int[] beatindexes(double[] spec, double del)
+        {
+            var indexes = new List<int>();
+            for (int x = 0; x + 2000 < spec.Length; x += 2000)
+            {
+                int upper = x + 4000 > spec.Length ? spec.Length : x + 2000;
+                int firstindex = firstbeatindex(spec[x..upper], del) + x;
+                int index = firstindex;
+                int i = 0;
+                while (index < upper)
+                {
+                    indexes.Add(index);
+                    i++;
+                    index = (int)Math.Round(firstindex + i * del);
+                }
+            }
+            return indexes.ToArray();
+        }
+
+        static int firstbeatindex(double[] spec, double del)
+        {
+            int highestindex = 0;
+            double highestsum = 0;
+            int len = spec.Length;
+
+            for (int i = 0; i < del; i++)
+            {
+                double sum = 0;
+                int index = i;
+                int x = 0;
+
+                while (index < len)
+                {
+                    sum += spec[index];
+                    x++;
+                    index = (int)Math.Round(i + x * del);
+                }
+
+                if (sum > highestsum)
+                {
+                    highestsum = sum;
+                    highestindex = i;
+                }
+            }
+            return highestindex;
+        }
+
+        static double[] rollingavg(double[] arr, int radius)
+        {
+            double[] arr2 = new double[arr.Length];
+            double sum = arr[0..radius].Sum();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                double subtract = (i - radius - 1) >= 0 ? arr[i - radius - 1] : 0;
+                double add = (i + radius) < arr.Length ? arr[i + radius] : 0;
+                sum = sum - subtract + add;
+                arr2[i] = sum;
+            }
+            return arr2;
+        }
+
+        static double indextotime(int index, double samplerate, int step)
+        {
+            return (index + 18) * step / samplerate;
         }
 
         static double bpmtodel(double bpm, double samplerate, int step)
