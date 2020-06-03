@@ -7,27 +7,74 @@ using FFTWSharp;
 
 namespace BeatTimer
 {
+    public struct Beat
+    {
+        public Beat(double time, double intensity, double prominence)
+        {
+            T = time;
+            I = intensity;
+            P = prominence;
+        }
+
+        public double T { get; }
+        public double I { get; }
+        public double P { get; }
+
+        public override string ToString()
+        {
+            return $"Time: {T,10:0.00}, Intensity: {I,10:0.00}, Prominence: {P,10:0.00}";
+        }
+    }
+
     class BeatTimer
     {
         static void Main(string[] args)
         {
-            double[] data;
-            double samplerate;
+            var beats = beatdata(args[0]);
+            Console.WriteLine($"Getting beat data for {args[0]}...");
+            foreach (var beat in beats)
+            {
+                Console.WriteLine(beat);
+            }
+        }
+
+        static Beat[] beatdata(String wavfilename)
+        {
+            WAV.readWav(wavfilename, out double[] data, out double samplerate);
+            return beatdata(data, samplerate);
+        }
+
+        static Beat[] beatdata(double[] data, double samplerate)
+        {
             int step = 128;
             int size = 2048;
-
-            WAV.readWav(args[0], out data, out samplerate);
             var spec = spectrogram(data, size, step);
             var bpm = getbpm(spec, samplerate, step);
             var rolling = rollingavg(spec, 5);
             var del = bpmtodel(bpm, samplerate, step);
             var indexes = beatindexes(rolling, del / 8);
+            return beatdata(spec, indexes, samplerate, step);
+        }
 
-            Console.WriteLine("Bpm is " + bpm);
-            for (int i = 1; i < indexes.Length; i += 8)
+        static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step)
+        {
+            int len = spec.Length;
+            var beats = new List<Beat>();
+            int previndex = 0;
+
+            foreach (int index in indexes)
             {
-                Console.WriteLine("Beat at " + indextotime(indexes[i], samplerate, step));
+                int lower = index - 5 >= 0 ? index - 5 : 0;
+                int upper = index + 6 <= len ? index + 6 : len;
+                var selection = spec[lower..upper];
+
+                double time = indextotime(index, samplerate, step);
+                double intensity = selection.Sum();
+                double prominence = selection.Max() / (spec[previndex..index].Min() + 1);
+                beats.Add(new Beat(time, intensity, prominence));
+                previndex = index;
             }
+            return beats.ToArray();
         }
 
         static int[] beatindexes(double[] spec, double del)
