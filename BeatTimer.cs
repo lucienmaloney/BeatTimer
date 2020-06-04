@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using FFTWSharp;
@@ -28,23 +27,13 @@ namespace BeatTimer
 
     class BeatTimer
     {
-        static void Main(string[] args)
+        public static Beat[] beatdata(String wavfilename)
         {
-            var beats = beatdata(args[0]);
-            Console.WriteLine($"Getting beat data for {args[0]}...");
-            foreach (var beat in beats)
-            {
-                Console.WriteLine(beat);
-            }
-        }
-
-        static Beat[] beatdata(String wavfilename)
-        {
-            WAV.readWav(wavfilename, out double[] data, out double samplerate);
+            WavReader.readWav(wavfilename, out double[] data, out double samplerate);
             return beatdata(data, samplerate);
         }
 
-        static Beat[] beatdata(double[] data, double samplerate)
+        public static Beat[] beatdata(double[] data, double samplerate)
         {
             int step = 128;
             int size = 2048;
@@ -64,7 +53,7 @@ namespace BeatTimer
         /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
         /// <param name="step">FFT increment</param>
         /// <returns>Beat data array</returns>
-        static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step)
+        public static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step)
         {
             int len = spec.Length;
             var beats = new List<Beat>();
@@ -94,7 +83,7 @@ namespace BeatTimer
         /// <param name="spec">Spectrogram data</param>
         /// <param name="del">How far between beats</param>
         /// <returns>Beat start indexes</returns>
-        static int[] beatindexes(double[] spec, double del)
+        public static int[] beatindexes(double[] spec, double del)
         {
             var indexes = new List<int>();
             // Readjust the starting point every 2000 samples (roughly every 5 seconds)
@@ -121,7 +110,7 @@ namespace BeatTimer
         /// <param name="spec">Spectrogram data</param>
         /// <param name="del">How far between beats</param>
         /// <returns>First beat index</returns>
-        static int firstbeatindex(double[] spec, double del)
+        public static int firstbeatindex(double[] spec, double del)
         {
             int highestindex = 0;
             double highestsum = 0;
@@ -155,7 +144,7 @@ namespace BeatTimer
         /// <param name="arr">Data array</param>
         /// <param name="radius">How far to sum. 0 will get just the index. 1 will get index and its 2 neighbors</param>
         /// <returns>Data array rolled</returns>
-        static double[] rollingsum(double[] arr, int radius)
+        public static double[] rollingsum(double[] arr, int radius)
         {
             double[] arr2 = new double[arr.Length];
             double sum = arr[0..radius].Sum();
@@ -170,12 +159,12 @@ namespace BeatTimer
             return arr2;
         }
 
-        static double indextotime(int index, double samplerate, int step)
+        public static double indextotime(int index, double samplerate, int step)
         {
             return (index + 18) * step / samplerate;
         }
 
-        static double bpmtodel(double bpm, double samplerate, int step)
+        public static double bpmtodel(double bpm, double samplerate, int step)
         {
             return samplerate * 60 / (step * bpm);
         }
@@ -186,7 +175,7 @@ namespace BeatTimer
         /// <param name="arr">Audio data mainly, but could be any data with periodic repetitions</param>
         /// <param name="x">Number of indices to shift when comparing</param>
         /// <returns>Total "cost" of the shift. The lower the more similar</returns>
-        static double comb(double[] arr, int x)
+        public static double comb(double[] arr, int x)
         {
             double sum = 0;
             int count = 0;
@@ -288,55 +277,6 @@ namespace BeatTimer
             fftw.free(ptr);
             fftw.cleanup();
             return spec;
-        }
-    }
-
-    // https://stackoverflow.com/questions/8754111/how-to-read-the-data-in-a-wav-file-to-an-array
-    public class WAV
-    {
-        static double bytesToDouble(byte firstByte, byte secondByte)
-        {
-            short s = (short)((secondByte << 8) | firstByte);
-            return s / 32768.0;
-        }
-
-        static double bytesToDouble(byte b1, byte b2, byte b3, byte b4)
-        {
-            return (double)((b4 << 24) | (b3 << 16) | (b2 << 8) | b1);
-        }
-
-        public static void readWav(string filename, out double[] audio, out double samplerate)
-        {
-            byte[] wav = File.ReadAllBytes(filename);
-            int channels = wav[22];
-            int pos = 12;
-            while (!(wav[pos] == 100 && wav[pos + 1] == 97 && wav[pos + 2] == 116 && wav[pos + 3] == 97))
-            {
-                pos += 4;
-                int chunkSize = wav[pos] + wav[pos + 1] * 256 + wav[pos + 2] * 65536 + wav[pos + 3] * 16777216;
-                pos += 4 + chunkSize;
-            }
-            pos += 8;
-
-            int samples = (wav.Length - pos) / 2;
-            if (channels == 2) samples /= 2;
-
-            audio = new double[samples];
-
-            int i = 0;
-            while (pos + 4 < wav.Length)
-            {
-                audio[i] = bytesToDouble(wav[pos], wav[pos + 1]);
-                pos += 2;
-                if (channels == 2)
-                {
-                    audio[i] += bytesToDouble(wav[pos], wav[pos + 1]);
-                    pos += 2;
-                }
-                i++;
-            }
-
-            samplerate = bytesToDouble(wav[24], wav[25], wav[26], wav[27]);
         }
     }
 }
