@@ -70,7 +70,7 @@ namespace BeatTimer
 
                 double time = indextotime(index, samplerate, step);
                 double intensity = selection.Sum();
-                double prominence = selection.Max() / (spec[previndex..index].Min() + 1);
+                double prominence = selection.Max() / (spec[previndex..(index + 1)].Min() + 1);
                 beats.Add(new Beat(time, intensity, prominence));
                 previndex = index;
             }
