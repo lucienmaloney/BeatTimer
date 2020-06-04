@@ -50,12 +50,20 @@ namespace BeatTimer
             int size = 2048;
             var spec = spectrogram(data, size, step);
             var bpm = getbpm(spec, samplerate, step);
-            var rolling = rollingavg(spec, 5);
+            var rolling = rollingsum(spec, 5);
             var del = bpmtodel(bpm, samplerate, step);
             var indexes = beatindexes(rolling, del / 8);
             return beatdata(spec, indexes, samplerate, step);
         }
 
+        /// <summary>
+        ///   Get beat data (intensity and prominence) for each beat from their indexes
+        /// </summary>
+        /// <param name="spec">Spectrogram data</param>
+        /// <param name="indexes">Beat start indexes</param>
+        /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
+        /// <param name="step">FFT increment</param>
+        /// <returns>Beat data array</returns>
         static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step)
         {
             int len = spec.Length;
@@ -64,12 +72,15 @@ namespace BeatTimer
 
             foreach (int index in indexes)
             {
+                // No out of bounds-ing
                 int lower = index - 5 >= 0 ? index - 5 : 0;
                 int upper = index + 6 <= len ? index + 6 : len;
                 var selection = spec[lower..upper];
 
                 double time = indextotime(index, samplerate, step);
+                // Intensity is total sum of audio in short range
                 double intensity = selection.Sum();
+                // Prominence is ratio between max in short range to min of long preceeding range
                 double prominence = selection.Max() / (spec[previndex..(index + 1)].Min() + 1);
                 beats.Add(new Beat(time, intensity, prominence));
                 previndex = index;
@@ -77,9 +88,17 @@ namespace BeatTimer
             return beats.ToArray();
         }
 
+        /// <summary>
+        ///   Get the eighth-note beat times from a given spectrogram and bpm index delta
+        /// </summary>
+        /// <param name="spec">Spectrogram data</param>
+        /// <param name="del">How far between beats</param>
+        /// <returns>Beat start indexes</returns>
         static int[] beatindexes(double[] spec, double del)
         {
             var indexes = new List<int>();
+            // Readjust the starting point every 2000 samples (roughly every 5 seconds)
+            // This is to counteract tempo drift due to changing bpm's or other factors
             for (int x = 0; x + 2000 < spec.Length; x += 2000)
             {
                 int upper = x + 4000 > spec.Length ? spec.Length : x + 2000;
@@ -95,7 +114,13 @@ namespace BeatTimer
             }
             return indexes.ToArray();
         }
-
+        
+        /// <summary>
+        ///   The index of the first beat determined by which starting point produces a sequence of highest intensity
+        /// </summary>
+        /// <param name="spec">Spectrogram data</param>
+        /// <param name="del">How far between beats</param>
+        /// <returns>First beat index</returns>
         static int firstbeatindex(double[] spec, double del)
         {
             int highestindex = 0;
@@ -124,12 +149,19 @@ namespace BeatTimer
             return highestindex;
         }
 
-        static double[] rollingavg(double[] arr, int radius)
+        /// <summary>
+        ///   Get sum at each index of itself and surrounding values up to and including radius
+        /// </summary>
+        /// <param name="arr">Data array</param>
+        /// <param name="radius">How far to sum. 0 will get just the index. 1 will get index and its 2 neighbors</param>
+        /// <returns>Data array rolled</returns>
+        static double[] rollingsum(double[] arr, int radius)
         {
             double[] arr2 = new double[arr.Length];
             double sum = arr[0..radius].Sum();
             for (int i = 0; i < arr.Length; i++)
             {
+                // Don't go out of bounds now
                 double subtract = (i - radius - 1) >= 0 ? arr[i - radius - 1] : 0;
                 double add = (i + radius) < arr.Length ? arr[i + radius] : 0;
                 sum = sum - subtract + add;
@@ -148,6 +180,12 @@ namespace BeatTimer
             return samplerate * 60 / (step * bpm);
         }
 
+        /// <summary>
+        ///   Determine the total difference between unmodified wave and itself shifted x units
+        /// </summary>
+        /// <param name="arr">Audio data mainly, but could be any data with periodic repetitions</param>
+        /// <param name="x">Number of indices to shift when comparing</param>
+        /// <returns>Total "cost" of the shift. The lower the more similar</returns>
         static double comb(double[] arr, int x)
         {
             double sum = 0;
