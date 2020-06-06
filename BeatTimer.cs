@@ -8,20 +8,24 @@ namespace BeatTimer
 {
     public struct Beat
     {
-        public Beat(double time, double intensity, double prominence)
+        public Beat(double time, int section, int beat, double intensity, double prominence)
         {
             T = time;
             I = intensity;
             P = prominence;
+            S = section;
+            B = beat;
         }
 
         public double T { get; }
         public double I { get; }
         public double P { get; }
+        public int S { get; }
+        public int B { get; }
 
         public override string ToString()
         {
-            return $"Time: {T,10:0.00}, Intensity: {I,10:0.00}, Prominence: {P,10:0.00}";
+            return $"Time: {T,10:0.000000}, Section: {S,3}, Beat: {B,5} Intensity: {I,10:0.00}, Prominence: {P,10:0.00}";
         }
     }
 
@@ -42,7 +46,7 @@ namespace BeatTimer
             var rolling = rollingsum(spec, 5);
             var del = bpmtodel(bpm, samplerate, step);
             var indexes = beatindexes(rolling, del / 8);
-            return beatdata(spec, indexes, samplerate, step);
+            return beatdata(spec, indexes, samplerate, step, bpm);
         }
 
         /// <summary>
@@ -53,11 +57,15 @@ namespace BeatTimer
         /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
         /// <param name="step">FFT increment</param>
         /// <returns>Beat data array</returns>
-        public static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step)
+        public static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step, double bpm)
         {
             int len = spec.Length;
             var beats = new List<Beat>();
             int previndex = 0;
+
+            double starttime = indextotime(indexes[0], samplerate, step);
+            int section = 0;
+            int beat = 0;
 
             foreach (int index in indexes)
             {
@@ -66,12 +74,24 @@ namespace BeatTimer
                 int upper = index + 6 <= len ? index + 6 : len;
                 var selection = spec[lower..upper];
 
-                double time = indextotime(index, samplerate, step);
+                double indextime = indextotime(index, samplerate, step);
+                double time = starttime + 60 * beat / (bpm * 8);
+                if (Math.Abs(time - indextime) > 0.01)
+                {
+                    section++;
+                    beat = 0;
+                    starttime = indextime;
+                    time = indextime;
+                }
+
                 // Intensity is total sum of audio in short range
                 double intensity = selection.Sum();
                 // Prominence is ratio between max in short range to min of long preceeding range
                 double prominence = selection.Max() / (spec[previndex..(index + 1)].Min() + 1);
-                beats.Add(new Beat(time, intensity, prominence));
+                
+                beats.Add(new Beat(time, section, beat, intensity, prominence));
+
+                beat++;
                 previndex = index;
             }
             return beats.ToArray();
