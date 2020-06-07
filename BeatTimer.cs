@@ -32,12 +32,13 @@ namespace BeatTimer
 
     class BeatTimer
     {
+#if !UNITY_5_3_OR_NEWER
         public static Beat[] beatdata(String wavfilename)
         {
             WavReader.readWav(wavfilename, out double[] data, out double samplerate);
             return beatdata(data, samplerate);
         }
-
+#endif
         public static Beat[] beatdata(double[] data, double samplerate)
         {
             int step = 128;
