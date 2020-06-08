@@ -113,7 +113,7 @@ namespace BeatTimer
             for (int x = 0; x + 2000 < spec.Length; x += 2000)
             {
                 int upper = x + 4000 > spec.Length ? spec.Length : x + 2000;
-                int firstindex = firstbeatindex((double[])spec.RangeSelect(x, upper - 1).List, del) + x;
+                int firstindex = firstbeatindex(spec.RangeSelect(x, upper - 1), del) + x;
                 int index = firstindex;
                 int i = 0;
                 while (index < upper)
@@ -132,7 +132,7 @@ namespace BeatTimer
         /// <param name="spec">Spectrogram data</param>
         /// <param name="del">How far between beats</param>
         /// <returns>First beat index</returns>
-        public static int firstbeatindex(double[] spec, double del)
+        public static int firstbeatindex(RangeSelection<double> spec, double del)
         {
             int highestindex = 0;
             double highestsum = 0;

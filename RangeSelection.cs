@@ -5,25 +5,23 @@ namespace Kinemotik
 {
     public struct RangeSelection<T>
     {
-        private IList<T> _list;
-        private int _start;
-        private int _end;
-
-        public int Start { get => _start; }
-        public int End { get => _end; }
-        public IList<T> List { get => _list; }
+        public int Start { get; }
+        public int End { get; }
+        public int Length { get => 1 + End - Start; }
+        public int Count { get => Length; }
+        public IList<T> List { get; }
 
         public T this[int key]
         {
-            get => _list[key];
-            set => _list[key] = value;
+            get => List[key + Start];
+            set => List[key + Start] = value;
         }
 
         public RangeSelection(IList<T> list, int start = 0, int end = int.MaxValue)
         {
-            _list = list;
-            _start = Math.Max(0, start);
-            _end = Math.Min(list.Count - 1, end);
+            List = list;
+            Start = Math.Max(0, start);
+            End = Math.Min(list.Count - 1, end);
         }
     }
 
@@ -39,7 +37,7 @@ namespace Kinemotik
         {
             float sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -49,7 +47,7 @@ namespace Kinemotik
         {
             double sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -59,7 +57,7 @@ namespace Kinemotik
         {
             decimal sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -69,7 +67,7 @@ namespace Kinemotik
         {
             int sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -79,7 +77,7 @@ namespace Kinemotik
         {
             uint sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -89,7 +87,7 @@ namespace Kinemotik
         {
             long sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -99,7 +97,7 @@ namespace Kinemotik
         {
             ulong sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -109,7 +107,7 @@ namespace Kinemotik
         {
             short sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -119,7 +117,7 @@ namespace Kinemotik
         {
             ushort sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -129,7 +127,7 @@ namespace Kinemotik
         {
             sbyte sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -139,7 +137,7 @@ namespace Kinemotik
         {
             byte sum = 0;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 sum += r[i];
 
             return sum;
@@ -151,7 +149,7 @@ namespace Kinemotik
         {
             float min = float.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -161,7 +159,7 @@ namespace Kinemotik
         {
             double min = double.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -171,7 +169,7 @@ namespace Kinemotik
         {
             decimal min = decimal.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -181,7 +179,7 @@ namespace Kinemotik
         {
             int min = int.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -191,7 +189,7 @@ namespace Kinemotik
         {
             uint min = uint.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -201,7 +199,7 @@ namespace Kinemotik
         {
             long min = long.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -211,7 +209,7 @@ namespace Kinemotik
         {
             ulong min = ulong.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -221,7 +219,7 @@ namespace Kinemotik
         {
             short min = short.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -231,7 +229,7 @@ namespace Kinemotik
         {
             ushort min = ushort.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -241,7 +239,7 @@ namespace Kinemotik
         {
             sbyte min = sbyte.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -251,7 +249,7 @@ namespace Kinemotik
         {
             byte min = byte.MaxValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 min = Math.Min(min, r[i]);
 
             return min;
@@ -263,7 +261,7 @@ namespace Kinemotik
         {
             float max = float.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -273,7 +271,7 @@ namespace Kinemotik
         {
             double max = double.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -283,7 +281,7 @@ namespace Kinemotik
         {
             decimal max = decimal.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -293,7 +291,7 @@ namespace Kinemotik
         {
             int max = int.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -303,7 +301,7 @@ namespace Kinemotik
         {
             uint max = uint.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -313,7 +311,7 @@ namespace Kinemotik
         {
             long max = long.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -323,7 +321,7 @@ namespace Kinemotik
         {
             ulong max = ulong.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -333,7 +331,7 @@ namespace Kinemotik
         {
             short max = short.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -343,7 +341,7 @@ namespace Kinemotik
         {
             ushort max = ushort.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -353,7 +351,7 @@ namespace Kinemotik
         {
             sbyte max = sbyte.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
@@ -363,7 +361,7 @@ namespace Kinemotik
         {
             byte max = byte.MinValue;
 
-            for (int i = r.Start; i <= r.End; ++i)
+            for (int i = 0; i < r.Length; ++i)
                 max = Math.Max(max, r[i]);
 
             return max;
