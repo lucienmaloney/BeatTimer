@@ -2,3 +2,5 @@ bin/
 obj/
 Properties/
 test/
+.vs/BeatTimer/DesignTimeBuild/.dtbcache.v2
+*.sln

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using FFTWSharp;
+using Kinemotik;
 
 namespace BeatTimer
 {
@@ -31,12 +32,13 @@ namespace BeatTimer
 
     class BeatTimer
     {
+#if !UNITY_5_3_OR_NEWER
         public static Beat[] beatdata(String wavfilename)
         {
             WavReader.readWav(wavfilename, out double[] data, out double samplerate);
             return beatdata(data, samplerate);
         }
-
+#endif
         public static Beat[] beatdata(double[] data, double samplerate)
         {
             int step = 128;
@@ -72,7 +74,7 @@ namespace BeatTimer
                 // No out of bounds-ing
                 int lower = index - 5 >= 0 ? index - 5 : 0;
                 int upper = index + 6 <= len ? index + 6 : len;
-                var selection = spec[lower..upper];
+                var selection = spec.RangeSelect(lower, upper - 1);
 
                 double indextime = indextotime(index, samplerate, step);
                 double time = starttime + 60 * beat / (bpm * 8);
@@ -87,8 +89,8 @@ namespace BeatTimer
                 // Intensity is total sum of audio in short range
                 double intensity = selection.Sum();
                 // Prominence is ratio between max in short range to min of long preceeding range
-                double prominence = selection.Max() / (spec[previndex..(index + 1)].Min() + 1);
-                
+                double prominence = selection.Max() / (spec.RangeSelect(previndex, index).Min() + 1);
+
                 beats.Add(new Beat(time, section, beat, intensity, prominence));
 
                 beat++;
@@ -111,7 +113,7 @@ namespace BeatTimer
             for (int x = 0; x + 2000 < spec.Length; x += 2000)
             {
                 int upper = x + 4000 > spec.Length ? spec.Length : x + 2000;
-                int firstindex = firstbeatindex(spec[x..upper], del) + x;
+                int firstindex = firstbeatindex(spec.RangeSelect(x, upper - 1), del) + x;
                 int index = firstindex;
                 int i = 0;
                 while (index < upper)
@@ -123,14 +125,14 @@ namespace BeatTimer
             }
             return indexes.ToArray();
         }
-        
+
         /// <summary>
         ///   The index of the first beat determined by which starting point produces a sequence of highest intensity
         /// </summary>
         /// <param name="spec">Spectrogram data</param>
         /// <param name="del">How far between beats</param>
         /// <returns>First beat index</returns>
-        public static int firstbeatindex(double[] spec, double del)
+        public static int firstbeatindex(RangeSelection<double> spec, double del)
         {
             int highestindex = 0;
             double highestsum = 0;
@@ -167,7 +169,7 @@ namespace BeatTimer
         public static double[] rollingsum(double[] arr, int radius)
         {
             double[] arr2 = new double[arr.Length];
-            double sum = arr[0..radius].Sum();
+            double sum = arr.RangeSelect(0, radius - 1).Sum();
             for (int i = 0; i < arr.Length; i++)
             {
                 // Don't go out of bounds now
@@ -264,7 +266,7 @@ namespace BeatTimer
             int speclength = (n - size + step) / step - 10;
 
             double[] spec = new double[speclength];
-            double[,] ffts = new double[11,fftlength];
+            double[,] ffts = new double[11, fftlength];
             // FFT is returned as complex number with every other index being imaginary, so double length
             double[] fft = new double[fftlength * 2];
 
