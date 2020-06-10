@@ -68,6 +68,9 @@ namespace BeatTimer
             double starttime = indextotime(indexes[0], samplerate, step);
             int section = 0;
             int beat = 0;
+            double prevBeatTime = 0;
+            double prevBeatDelta = 0;
+            bool newSection = false;
 
             foreach (int index in indexes)
             {
@@ -80,20 +83,33 @@ namespace BeatTimer
                 double time = starttime + 60 * beat / (bpm * 8);
                 if (Math.Abs(time - indextime) > 0.01)
                 {
-                    section++;
+                    newSection = true;
                     beat = 0;
                     starttime = indextime;
                     time = indextime;
                 }
 
-                // Intensity is total sum of audio in short range
-                double intensity = selection.Sum();
-                // Prominence is ratio between max in short range to min of long preceeding range
-                double prominence = selection.Max() / (spec.RangeSelect(previndex, index).Min() + 1);
+                // Only add the beat if the time delta is more than half of our previously established delta:
+                if (time - prevBeatTime > prevBeatDelta * 0.5f)
+                {
+                    if (newSection)
+                    {
+                        ++section;
+                        newSection = false;
+                    }
 
-                beats.Add(new Beat(time, section, beat, intensity, prominence));
+                    // Intensity is total sum of audio in short range
+                    double intensity = selection.Sum();
+                    // Prominence is ratio between max in short range to min of long preceeding range
+                    double prominence = selection.Max() / (spec.RangeSelect(previndex, index).Min() + 1);
 
-                beat++;
+                    beats.Add(new Beat(time, section, beat, intensity, prominence));
+                    beat++;
+
+                    prevBeatDelta = time - prevBeatTime;
+                    prevBeatTime = time;
+                }
+
                 previndex = index;
             }
             return beats.ToArray();
