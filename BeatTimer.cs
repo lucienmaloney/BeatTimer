@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Xml.Schema;
 using FFTWSharp;
 using Kinemotik;
 
@@ -81,7 +82,7 @@ namespace BeatTimer
 
                 double indextime = indextotime(index, samplerate, step);
                 double time = starttime + 60 * beat / (bpm * 8);
-                if (Math.Abs(time - indextime) > 0.01)
+                if (Math.Abs(time - indextime) > 0.005)
                 {
                     newSection = true;
                     beat = 0;
@@ -124,15 +125,16 @@ namespace BeatTimer
         public static int[] beatindexes(double[] spec, double del)
         {
             var indexes = new List<int>();
-            // Readjust the starting point every 2000 samples (roughly every 5 seconds)
+            // Readjust the starting point every <group> samples (roughly every 5 seconds)
             // This is to counteract tempo drift due to changing bpm's or other factors
-            for (int x = 0; x + 2000 < spec.Length; x += 2000)
+            for (int x = 0; x + 5000 < spec.Length; x += 1000)
             {
-                int upper = x + 4000 > spec.Length ? spec.Length : x + 2000;
+                int upper = x + 5000 > spec.Length ? spec.Length : x + 5000;
+                int limit = upper == spec.Length ? upper : x + 1000;
                 int firstindex = firstbeatindex(spec.RangeSelect(x, upper - 1), del) + x;
                 int index = firstindex;
                 int i = 0;
-                while (index < upper)
+                while (index < limit)
                 {
                     indexes.Add(index);
                     i++;
