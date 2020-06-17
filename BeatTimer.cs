@@ -34,13 +34,13 @@ namespace BeatTimer
     class BeatTimer
     {
 #if !UNITY_5_3_OR_NEWER
-        public static Beat[] beatdata(String wavfilename)
+        public static List<Beat> beatdata(String wavfilename)
         {
             WavReader.readWav(wavfilename, out double[] data, out double samplerate);
             return beatdata(data, samplerate);
         }
 #endif
-        public static Beat[] beatdata(double[] data, double samplerate)
+        public static List<Beat> beatdata(double[] data, double samplerate)
         {
             int step = 128;
             int size = 2048;
@@ -60,7 +60,7 @@ namespace BeatTimer
         /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
         /// <param name="step">FFT increment</param>
         /// <returns>Beat data array</returns>
-        public static Beat[] beatdata(double[] spec, int[] indexes, double samplerate, int step, double bpm)
+        public static List<Beat> beatdata(double[] spec, int[] indexes, double samplerate, int step, double bpm)
         {
             int len = spec.Length;
             var beats = new List<Beat>();
@@ -113,7 +113,11 @@ namespace BeatTimer
 
                 previndex = index;
             }
-            return beats.ToArray();
+            // Find first instance of whole beat and chop off preceeding notes so that first beat is whole beat
+            var intensities = beats.ConvertAll(new Converter<Beat, double>((Beat b) => b.I));
+            var wholebeatindex = firstbeatindex(intensities.RangeSelect(0, intensities.Count - 1), 8);
+            beats.RemoveRange(0, wholebeatindex);
+            return beats;
         }
 
         /// <summary>
