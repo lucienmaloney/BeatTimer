@@ -287,19 +287,27 @@ namespace BeatTimer
                 Marshal.Copy(arr, i, ptr, size);
                 fftw.execute(plan);
                 Marshal.Copy(ptrout, fft, 0, fftlength * 2);
+
+                int modindex = index % 11;
+                int minusindex = index - 10;
+                int modminusindex = minusindex % 11;
+
                 for (int j = 0; j < fftlength * 2; j += 2)
                 {
                     // Set to absolute value of complex number
-                    ffts[index % 11, j / 2] = Math.Sqrt(fft[j] * fft[j] + fft[j + 1] * fft[j + 1]);
+                    ffts[modindex, j / 2] = Math.Sqrt(fft[j] * fft[j] + fft[j + 1] * fft[j + 1]);
                 }
                 if (index >= 10)
                 {
+                    double diff = 0;
+                    double sum = 0;
                     for (int j = 0; j < fftlength; j++)
                     {
-                        double diff = ffts[index % 11, j] - ffts[(index - 10) % 11, j];
+                        diff = ffts[modindex, j] - ffts[modminusindex, j];
                         // Only add difference if positive. Results in better results
-                        spec[index - 10] += diff > 0 ? diff : 0;
+                        sum += diff > 0 ? diff : 0;
                     }
+                    spec[minusindex] = sum;
                 }
             }
             fftw.destroy_plan(plan);
