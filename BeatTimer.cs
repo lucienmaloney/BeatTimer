@@ -114,11 +114,11 @@ namespace BeatTimer
         public static int[] beatindexes(double[] spec, double del)
         {
             var indexes = new List<int>();
-            // Readjust the starting point every <group> samples (roughly every 5 seconds)
+            // Readjust the starting point every 1000 samples (roughly every 2.5 seconds)
             // This is to counteract tempo drift due to changing bpm's or other factors
-            for (int x = 0; x + 5000 < spec.Length; x += 1000)
+            for (int x = 0; x + 2000 < spec.Length; x += 1000)
             {
-                int upper = x + 5000 > spec.Length ? spec.Length : x + 5000;
+                int upper = x + 3000 > spec.Length ? spec.Length : x + 3000;
                 int limit = upper == spec.Length ? upper : x + 1000;
                 int firstindex = firstbeatindex(spec.RangeSelect(x, upper - 1), del) + x;
                 int index = firstindex;
