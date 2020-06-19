@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Xml.Schema;
 using FFTWSharp;
 using Kinemotik;
 
@@ -62,42 +61,31 @@ namespace BeatTimer
         /// <returns>Beat data array</returns>
         public static List<Beat> beatdata(double[] spec, int[] indexes, double samplerate, int step, double bpm)
         {
-            int len = spec.Length;
             var beats = new List<Beat>();
-            int previndex = 0;
-
             double starttime = indextotime(indexes[0], samplerate, step);
+            double deltatime = 60 / (bpm * 8);
+
             int section = 0;
             int beat = 0;
-            double prevBeatTime = 0;
-            double prevBeatDelta = 0;
-            bool newSection = false;
+            int previndex = 0;
 
             foreach (int index in indexes)
             {
-                // No out of bounds-ing
-                int lower = index - 5 >= 0 ? index - 5 : 0;
-                int upper = index + 6 <= len ? index + 6 : len;
-                var selection = spec.RangeSelect(lower, upper - 1);
+                var selection = spec.RangeSelect(index - 5, index + 5);
 
                 double indextime = indextotime(index, samplerate, step);
-                double time = starttime + 60 * beat / (bpm * 8);
-                if (Math.Abs(time - indextime) > 0.005)
+                double time = starttime + beat * deltatime;
+                if (time - indextime < deltatime * 0.5)
                 {
-                    newSection = true;
-                    beat = 0;
-                    starttime = indextime;
-                    time = indextime;
-                }
-
-                // Only add the beat if the time delta is more than half of our previously established delta:
-                if (time - prevBeatTime > prevBeatDelta * 0.5f)
-                {
-                    if (newSection)
+                    if (Math.Abs(time - indextime) > 0.005)
                     {
-                        ++section;
-                        newSection = false;
+                        beat = 0;
+                        section++;
+                        starttime = indextime;
+                        time = indextime;
                     }
+
+                    // Only add the beat if the time delta is more than half of our previously established delta:
 
                     // Intensity is total sum of audio in short range
                     double intensity = selection.Sum();
@@ -106,13 +94,10 @@ namespace BeatTimer
 
                     beats.Add(new Beat(time, section, beat, intensity, prominence));
                     beat++;
-
-                    prevBeatDelta = time - prevBeatTime;
-                    prevBeatTime = time;
+                    previndex = index;
                 }
-
-                previndex = index;
             }
+
             // Find first instance of whole beat and chop off preceeding notes so that first beat is whole beat
             var intensities = beats.ConvertAll(new Converter<Beat, double>((Beat b) => b.I));
             var wholebeatindex = firstbeatindex(intensities.RangeSelect(0, intensities.Count - 1), 8);
