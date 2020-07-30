@@ -216,6 +216,15 @@ namespace BeatTimer
             return sum / count;
         }
 
+        public static double comb(double[] arr, double x) {
+            int lower = (int)Math.Floor(x);
+            int upper = (int)Math.Ceiling(x);
+            if (upper == lower) {
+                return comb(arr, lower);
+            }
+            return (upper - x) * comb(arr, lower) + (x - lower) * comb(arr, upper);
+        }
+
         /// <summary>
         ///   Estimate the bpm to nearest integer of audio spectral flux data
         /// </summary>
@@ -223,21 +232,18 @@ namespace BeatTimer
         /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
         /// <param name="step">FFT increment</param>
         /// <returns>Estimated bpm</returns>
-        public static double getbpm(double[] spec, double samplerate, int step)
+        public static double getbpm(double[] spec, double samplerate, int step, int lowerbound = 70, int upperbound = 170)
         {
-            int lower = (int)Math.Floor(bpmtodel(75, samplerate, step)) - 1;
-            int upper = (int)Math.Ceiling(bpmtodel(15, samplerate, step)) + 1;
-
             int minindex = 0;
             double freqmin = double.MaxValue;
 
-            double[] bins = new double[upper - lower + 1];
-            for (int i = lower; i <= upper; i++)
-            {
-                bins[i - lower] = comb(spec, i);
+            double[] bins = new double[upperbound - lowerbound + 3];
+            for (int i = lowerbound - 1; i <= upperbound + 1; i++) {
+                double del = bpmtodel(i, samplerate, step);
+                bins[i + 1 - lowerbound] = comb(spec, del) + comb(spec, del * 2) + comb(spec, del * 4);
             }
 
-            for (int i = 1; i < upper - lower; i++)
+            for (int i = 1; i < upperbound - lowerbound + 1; i++)
             {
                 if (bins[i] < bins[i - 1] && bins[i] < bins[i + 1] && bins[i] < freqmin)
                 {
@@ -246,9 +252,7 @@ namespace BeatTimer
                 }
             }
 
-            double selectedbpm = bpmtodel(lower + minindex, samplerate, step);
-            double bpm = selectedbpm * 8;
-            return bpm > 400 ? Math.Round(bpm / 2) / 2 : Math.Round(bpm) / 2;
+            return minindex + lowerbound - 1;
         }
 
 
