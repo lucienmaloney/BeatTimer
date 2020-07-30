@@ -30,13 +30,14 @@ namespace BeatTimer {
     class BeatParser {
         public static List<FP> FPdata(List<Beat> beats) {
             var fp = new List<FP>();
-            for (int i = 0; i + 64 <= beats.Count; i += 64) {
+            for (int i = 0; i < beats.Count; i += 64) {
                 double p = 0;
                 double f = 0;
                 double time = beats[i].T;
                 double prev = 0;
 
-                for (int j = 0; j < 64; j++) {
+                int max = Math.Min(64, beats.Count - i);
+                for (int j = 0; j < max; j++) {
                     p += Math.Sqrt(beats[i + j].I);
                     f += Math.Abs(beats[i + j].P - prev);
                     prev = beats[i + j].P;
