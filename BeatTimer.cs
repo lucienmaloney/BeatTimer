@@ -112,8 +112,6 @@ namespace BeatTimer
             int minindex = timetoaudioindex(time - deltatime / 2, samplerate, length);
             int maxindex = timetoaudioindex(time + deltatime / 2, samplerate, length);
             double sum = 0;
-            Console.WriteLine(minindex);
-            Console.WriteLine(maxindex);
             for (int i = minindex; i <= maxindex; i++) {
                 sum += Math.Abs(data[i]);
             }
