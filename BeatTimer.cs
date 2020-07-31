@@ -9,11 +9,12 @@ namespace BeatTimer
 {
     public struct Beat
     {
-        public Beat(double time, int section, int beat, double intensity, double prominence)
+        public Beat(double time, int section, int beat, double intensity, double prominence, double amplitude)
         {
             T = time;
             I = intensity;
             P = prominence;
+            A = amplitude;
             S = section;
             B = beat;
         }
@@ -23,10 +24,11 @@ namespace BeatTimer
         public double P { get; }
         public int S { get; }
         public int B { get; }
+        public double A { get; }
 
         public override string ToString()
         {
-            return $"Time: {T,10:0.000000}, Section: {S,3}, Beat: {B,5} Intensity: {I,10:0.00}, Prominence: {P,10:0.00}";
+            return $"Time: {T,10:0.000000}, Section: {S,3}, Beat: {B,5} Intensity: {I,10:0.00}, Prominence: {P,10:0.00}, Amplitude: {A,10:0.00}";
         }
     }
 
@@ -48,18 +50,19 @@ namespace BeatTimer
             var rolling = rollingsum(spec, 5);
             var del = bpmtodel(bpm, samplerate, step);
             var indexes = beatindexes(rolling, del / 8);
-            return beatdata(spec, indexes, samplerate, step, bpm);
+            return beatdata(spec, data, indexes, samplerate, step, bpm);
         }
 
         /// <summary>
         ///   Get beat data (intensity and prominence) for each beat from their indexes
         /// </summary>
         /// <param name="spec">Spectrogram data</param>
+        /// <param name="data">Raw audio data</param>
         /// <param name="indexes">Beat start indexes</param>
         /// <param name="samplerate">48000.0hz, 44100.0hz, etc</param>
         /// <param name="step">FFT increment</param>
         /// <returns>Beat data array</returns>
-        public static List<Beat> beatdata(double[] spec, int[] indexes, double samplerate, int step, double bpm)
+        public static List<Beat> beatdata(double[] spec, double[] data, int[] indexes, double samplerate, int step, double bpm)
         {
             var beats = new List<Beat>();
             double starttime = indextotime(indexes[0], samplerate, step);
@@ -71,7 +74,7 @@ namespace BeatTimer
 
             foreach (int index in indexes)
             {
-                var selection = spec.RangeSelect(index - 5, index + 5);
+                var selection = spec.RangeSelect(index - 8, index + 8);
 
                 double indextime = indextotime(index, samplerate, step);
                 double time = starttime + beat * deltatime;
@@ -85,14 +88,13 @@ namespace BeatTimer
                         time = indextime;
                     }
 
-                    // Only add the beat if the time delta is more than half of our previously established delta:
-
+                    double amp = amplitude(data, samplerate, time, deltatime);
                     // Intensity is total sum of audio in short range
                     double intensity = selection.Sum();
                     // Prominence is ratio between max in short range to min of long preceeding range
-                    double prominence = selection.Max() / (spec.RangeSelect(previndex, index).Min() + 1);
+                    double prominence = selection.Max() - spec.RangeSelect(previndex, index).Min();
 
-                    beats.Add(new Beat(time, section, beat, intensity, prominence));
+                    beats.Add(new Beat(time, section, beat, intensity, prominence, amp));
                     beat++;
                     previndex = index;
                 }
@@ -103,6 +105,24 @@ namespace BeatTimer
             var wholebeatindex = firstbeatindex(intensities.RangeSelect(0, intensities.Count - 1), 8);
             beats.RemoveRange(0, wholebeatindex);
             return beats;
+        }
+
+        public static double amplitude(double[] data, double samplerate, double time, double deltatime) {
+            int length = data.Length;
+            int minindex = timetoaudioindex(time - deltatime / 2, samplerate, length);
+            int maxindex = timetoaudioindex(time + deltatime / 2, samplerate, length);
+            double sum = 0;
+            Console.WriteLine(minindex);
+            Console.WriteLine(maxindex);
+            for (int i = minindex; i <= maxindex; i++) {
+                sum += Math.Abs(data[i]);
+            }
+            return sum;
+        }
+
+        public static int timetoaudioindex(double time, double samplerate, int length) {
+            int index = (int)Math.Round(time * samplerate);
+            return index < 0 ? 0 : index >= length ? length - 1 : index;
         }
 
         /// <summary>
@@ -254,7 +274,6 @@ namespace BeatTimer
 
             return minindex + lowerbound - 1;
         }
-
 
         /// <summary>
         ///   Calculates the spectral flux of a real double array
