@@ -44,7 +44,7 @@ namespace BeatTimer
                 pos += 2;
                 if (channels == 2)
                 {
-                    audio[i] += bytesToDouble(wav[pos], wav[pos + 1]);
+                    audio[i] = (audio[i] + bytesToDouble(wav[pos], wav[pos + 1])) / 2;
                     pos += 2;
                 }
                 i++;

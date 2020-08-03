@@ -35,10 +35,10 @@ namespace BeatTimer {
 
     class BeatParser {
         // Average physicality and freneticism calculated by a sampling and averaging a collection of many different songs
-        private static double paverageaverage = 51275.34475664618;
-        private static double pdeviationaverage = 23120.601566104728;
-        private static double faverageaverage = 1466585.6747473634;
-        private static double fdeviationaverage = 816264.2562507965;
+        private static double paverageaverage = 23755.8733045355;
+        private static double pdeviationaverage = 11806.04783001002;
+        private static double faverageaverage = 662660.6961113685;
+        private static double fdeviationaverage = 324379.5395565418;
         
         public static List<FP> FPdata(List<Beat> beats) {
             var fp = new List<FP>();
@@ -64,6 +64,7 @@ namespace BeatTimer {
 
             stddev(physicalities, out double pdev, out double paverage);
             stddev(freneticisms, out double fdev, out double faverage);
+
             pdev = (pdev + pdeviationaverage) / 2;
             paverage = (paverage + paverageaverage) / 2;
             fdev = (fdev + fdeviationaverage) / 2;
@@ -74,7 +75,7 @@ namespace BeatTimer {
                 int fvalue = freneticisms[i]  > faverage + fdev / 2 ? 2 : freneticisms[i]  > faverage - fdev / 2 ? 1 : 0;
                 fp.Add(new FP(times[i], fvalue, pvalue));
             }
-
+            
             return fp;
         }
 
